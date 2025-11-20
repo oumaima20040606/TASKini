@@ -1,0 +1,88 @@
+<div class="task-details" *ngIf="task">
+  <div class="details-header">
+    <a routerLink="/dashboard/tasks" class="back-link">
+      <span class="material-icons">arrow_back</span>
+      Back to Tasks
+    </a>
+  </div>
+
+  <div class="details-content">
+    <div class="details-main">
+      <div class="task-header">
+        <div>
+          <app-badge [text]="task.category"></app-badge>
+          <h1>{{ task.title }}</h1>
+        </div>
+        <div class="task-budget-large">\${{ task.budget }}</div>
+      </div>
+
+      <div class="task-info">
+        <div class="info-item">
+          <span class="material-icons">person</span>
+          <div>
+            <label>Posted by</label>
+            <p>{{ task.postedByName }}</p>
+          </div>
+        </div>
+        <div class="info-item">
+          <span class="material-icons">location_on</span>
+          <div>
+            <label>Location</label>
+            <p>{{ task.location }}</p>
+          </div>
+        </div>
+        <div class="info-item">
+          <span class="material-icons">calendar_today</span>
+          <div>
+            <label>Date</label>
+            <p>{{ task.date | date: 'MMM d, yyyy' }}</p>
+          </div>
+        </div>
+        <div class="info-item" *ngIf="task.applications">
+          <span class="material-icons">people</span>
+          <div>
+            <label>Applications</label>
+            <p>{{ task.applications }} {{ task.applications === 1 ? 'person' : 'people' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-section">
+        <h3>Description</h3>
+        <p>{{ task.description }}</p>
+      </div>
+
+      <div class="task-section" *ngIf="task.requirements">
+        <h3>Requirements</h3>
+        <p>{{ task.requirements }}</p>
+      </div>
+
+      <div class="apply-section">
+        <button 
+          *ngIf="!applied" 
+          class="btn btn-primary btn-lg"
+          (click)="applyToTask()">
+          <span class="material-icons">send</span>
+          Apply to Task
+        </button>
+        <div *ngIf="applied" class="applied-message">
+          <span class="material-icons">check_circle</span>
+          <p>You've successfully applied to this task!</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="details-sidebar" *ngIf="similarTasks.length > 0">
+      <h3>Similar Tasks</h3>
+      <div class="similar-tasks">
+        <app-task-card *ngFor="let similarTask of similarTasks" [task]="similarTask"></app-task-card>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="no-task" *ngIf="!task">
+  <span class="material-icons">error</span>
+  <h2>Task not found</h2>
+  <a routerLink="/dashboard/tasks" class="btn btn-primary">Browse Tasks</a>
+</div>
