@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { UserService } from '../../../services/user.service';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './register.component.html',
   styleUrl: './register.component.css'
 })
@@ -20,7 +20,9 @@ export class RegisterComponent {
     private router: Router
   ) {
     this.registerForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(2)]],
+      fullName: ['', [Validators.required, Validators.minLength(2)]],
+      location: ['', [Validators.required]],
+      phone: ['', [Validators.required, Validators.pattern('^[0-9]{8,15}$')]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]]
@@ -29,17 +31,27 @@ export class RegisterComponent {
 
   onSubmit(): void {
     if (this.registerForm.valid) {
-      const { name, email, password, confirmPassword } = this.registerForm.value;
-      if (password === confirmPassword) {
-        const success = this.userService.register(name, email, password);
-        if (success) {
-          this.router.navigate(['/dashboard']);
+      const { fullName, location, phone, email, password, confirmPassword } = this.registerForm.value;
+
+      if (password !== confirmPassword) return;
+
+      const data = { fullName, location, phone, email, password };
+
+      this.userService.register(data).subscribe({
+        next: res => {
+          console.log("REGISTER SUCCESS:", res);
+          this.router.navigate(['/login']);
+        },
+        error: err => {
+          console.log("REGISTER ERROR:", err);
         }
-      }
+      });
     }
   }
 
-  get name() { return this.registerForm.get('name'); }
+  get fullName() { return this.registerForm.get('fullName'); }
+  get location() { return this.registerForm.get('location'); }
+  get phone() { return this.registerForm.get('phone'); }
   get email() { return this.registerForm.get('email'); }
   get password() { return this.registerForm.get('password'); }
   get confirmPassword() { return this.registerForm.get('confirmPassword'); }
