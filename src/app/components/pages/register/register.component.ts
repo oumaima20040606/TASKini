@@ -9,7 +9,7 @@ import { UserService } from '../../../services/user.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './register.component.html',
-  styleUrl: './register.component.css'
+  styleUrls: ['./register.component.css']   // ✔ تم الإصلاح
 })
 export class RegisterComponent {
   registerForm: FormGroup;
@@ -21,32 +21,37 @@ export class RegisterComponent {
   ) {
     this.registerForm = this.fb.group({
       fullName: ['', [Validators.required, Validators.minLength(2)]],
-      location: ['', [Validators.required]],
+      location: ['', Validators.required],
       phone: ['', [Validators.required, Validators.pattern('^[0-9]{8,15}$')]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]]
+      confirmPassword: ['', Validators.required]
     });
   }
 
   onSubmit(): void {
-    if (this.registerForm.valid) {
-      const { fullName, location, phone, email, password, confirmPassword } = this.registerForm.value;
+    if (this.registerForm.invalid) return;
 
-      if (password !== confirmPassword) return;
+    const { fullName, location, phone, email, password, confirmPassword } = this.registerForm.value;
 
-      const data = { fullName, location, phone, email, password };
-
-      this.userService.register(data).subscribe({
-        next: res => {
-          console.log("REGISTER SUCCESS:", res);
-          this.router.navigate(['/login']);
-        },
-        error: err => {
-          console.log("REGISTER ERROR:", err);
-        }
-      });
+    if (password !== confirmPassword) {
+      alert("Les mots de passe ne correspondent pas");
+      return;
     }
+
+    const data = { fullName, location, phone, email, password };
+
+    this.userService.register(data).subscribe({
+      next: res => {
+        console.log("REGISTER SUCCESS:", res);
+        alert("Compte créé avec succès !");
+        this.router.navigate(['/login']);
+      },
+      error: err => {
+        console.log("REGISTER ERROR:", err);
+        alert("Erreur lors de l'inscription !");
+      }
+    });
   }
 
   get fullName() { return this.registerForm.get('fullName'); }

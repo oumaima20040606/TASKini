@@ -22,28 +22,21 @@ export class LoginComponent {
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required]]
+      password: ['', Validators.required]
     });
   }
 
   onSubmit(): void {
     if (this.loginForm.invalid) return;
 
-    const email = this.loginForm.value.email;
-    const password = this.loginForm.value.password;
+    const { email, password } = this.loginForm.value;
 
     this.userService.login(email, password).subscribe({
-      next: (res: any) => {
-        console.log("LOGIN SUCCESS:", res);
+      next: (user: any) => {
+        console.log("LOGIN SUCCESS:", user);
 
-        // ➜ Important : la propriété s'appelle access_token
-        const token = res["access_token"];
-        if (!token) {
-          alert("Token non reçu !");
-          return;
-        }
-
-        localStorage.setItem("access_token", token);
+        // ✔ Spring Boot يرجع User مش Token
+        localStorage.setItem("user", JSON.stringify(user));
 
         this.router.navigate(['/dashboard']);
       },

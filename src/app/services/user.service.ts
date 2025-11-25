@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
 import { User } from '../models/task.model';
 
 @Injectable({
@@ -9,94 +8,67 @@ import { User } from '../models/task.model';
 })
 export class UserService {
 
-  // -------------------------------
-  // API URLs
-  // -------------------------------
-  private springApi = 'http://localhost:8094';   // USER-SERVICE
-  private keycloakTokenUrl =
-    'http://localhost:8080/realms/taskini-realm/protocol/openid-connect/token';
+  private springApi = 'http://localhost:8094';
 
-  // -------------------------------
-  // AUTH STATE
-  // -------------------------------
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
-
-  private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
-  public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
   constructor(private http: HttpClient) {}
 
   // ===============================================================
   // REGISTER (Spring)
   // ===============================================================
- register(data: any): Observable<any> {
-  return this.http.post(`http://localhost:8094/api/auth/register`, data);
-}
-
-
-  // ===============================================================
-  // LOGIN (Keycloak)
-  // ===============================================================
-login(email: string, password: string) {
-  const body = new URLSearchParams();
-  body.set('grant_type', 'password');
-  body.set('client_id', 'taskini_client');
-  body.set('username', email);
-  body.set('password', password);
-
-  return this.http.post(
-    'http://localhost:8080/realms/taskini-realm/protocol/openid-connect/token',
-    body.toString(),
-    {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    }
-  );
-}
-
-
-
-
-
-  // ===============================================================
-  // GET AUTH HEADERS
-  // ===============================================================
-  private getAuthHeaders() {
-    return new HttpHeaders({
-      Authorization: `Bearer ${localStorage.getItem('access_token')}`
-    });
+  register(data: any): Observable<any> {
+    return this.http.post(`${this.springApi}/api/auth/register`, data);
   }
 
   // ===============================================================
-  // GET USER BY ID (Secured with Token)
+  // LOGIN (Spring – بدون Keycloak)
   // ===============================================================
-getUserById(id: number): Observable<User> {
-  return this.http.get<User>(
-    `${this.springApi}/users/${id}`,
-    { headers: this.getAuthHeaders() }
-  );
+  login(email: string, password: string): Observable<User> {
+    return this.http.post<User>(
+      `${this.springApi}/api/auth/login`,
+      { email, password }
+    );
+  }
+
+  // ===============================================================
+  // GET USER BY ID (Spring)
+  // ===============================================================
+  getUserById(id: number): Observable<User> {
+    return this.http.get<User>(`${this.springApi}/users/${id}`);
+  }
+ // ===============================================================
+// UPDATE USER (Spring)
+// ===============================================================
+updateUser(user: User): Observable<User> {
+  return this.http.put<User>(`${this.springApi}/users/${user.id}`, user);
 }
+
 
   // ===============================================================
   // SET CURRENT USER
   // ===============================================================
   setCurrentUser(user: User | null) {
     this.currentUserSubject.next(user);
+    if (user) localStorage.setItem("user", JSON.stringify(user));
+    else localStorage.removeItem("user");
   }
 
   // ===============================================================
-  // GET CURRENT USER
+  // GET CURRENT USER FROM LOCALSTORAGE
   // ===============================================================
   getCurrentUser(): User | null {
-    return this.currentUserSubject.value;
+    const user = localStorage.getItem("user");
+    return user ? JSON.parse(user) : null;
   }
+
 
   // ===============================================================
   // LOGOUT
   // ===============================================================
   logout(): void {
-    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
     this.currentUserSubject.next(null);
-    this.isAuthenticatedSubject.next(false);
   }
 }
