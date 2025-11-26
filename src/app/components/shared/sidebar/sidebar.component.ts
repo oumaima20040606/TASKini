@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { UserService } from '../../../services/user.service';
+import { TaskService } from '../../../services/task.service';
+import { Subscription, combineLatest } from 'rxjs';
 
 @Component({
   selector: 'app-sidebar',
@@ -25,6 +27,7 @@ import { UserService } from '../../../services/user.service';
         <a routerLink="/dashboard/my-tasks" routerLinkActive="active" class="sidebar-link">
           <span class="material-icons">assignment</span>
           <span>My Tasks</span>
+          <span *ngIf="myTasksCount > 0" class="badge">{{ myTasksCount }}</span>
         </a>
         <a routerLink="/dashboard/applications" routerLinkActive="active" class="sidebar-link">
           <span class="material-icons">work</span>
@@ -103,6 +106,16 @@ import { UserService } from '../../../services/user.service';
       font-size: 1.5rem;
     }
 
+    .badge {
+      background: var(--primary-green);
+      color: white;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      margin-left: auto;
+      align-self: center;
+    }
+
     .sidebar-link.logout {
       margin-top: auto;
       color: var(--text-light);
@@ -131,10 +144,33 @@ import { UserService } from '../../../services/user.service';
   `]
 })
 export class SidebarComponent {
-  constructor(private userService: UserService) {}
+  myTasksCount: number = 0;
+  private sub?: Subscription;
+
+  constructor(private userService: UserService, private taskService: TaskService) {
+    // combine latest tasks and current user to compute the "My Tasks" count
+    this.sub = combineLatest([this.taskService.tasks$, this.userService.currentUser$])
+      .subscribe(([tasks, user]) => {
+        if (!user) {
+          // try to read from localStorage fallback
+          const lu = this.userService.getCurrentUser();
+          const uid = lu ? (lu as any).id : null;
+          this.myTasksCount = uid ? tasks.filter((t: any) => String(t.creatorId) === String(uid)).length : 0;
+        } else {
+          const uid = (user as any).id;
+          this.myTasksCount = uid ? tasks.filter((t: any) => String(t.creatorId) === String(uid)).length : 0;
+        }
+      });
+    // Ensure tasks are fetched at least once so the badge can populate quickly
+    this.taskService.getTasks().subscribe({ next: () => {}, error: () => {} });
+  }
 
   logout(): void {
     this.userService.logout();
     window.location.href = '/';
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
   }
 }

@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TaskService } from '../../../services/task.service';
 import { TaskCardComponent } from '../../shared/task-card/task-card.component';
 import { Task } from '../../../models/task.model';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-task-feed',
@@ -18,6 +19,7 @@ export class TaskFeedComponent implements OnInit {
   searchTerm: string = '';
   selectedCategory: string = '';
   maxBudget: number = 1000;
+  private sub?: Subscription;
 
   categories = [
     'All',
@@ -35,10 +37,24 @@ export class TaskFeedComponent implements OnInit {
   constructor(private taskService: TaskService) {}
 
   ngOnInit(): void {
-    this.taskService.getTasks().subscribe(tasks => {
+    // Subscribe to the shared tasks$ observable so the component updates
+    // whenever TaskService.setTasks(...) is called.
+    this.sub = this.taskService.tasks$.subscribe(tasks => {
       this.tasks = tasks;
       this.filteredTasks = tasks;
     });
+
+    // Trigger a fetch from the backend. TaskService will populate tasks$ when the response arrives.
+    this.taskService.getTasks().subscribe({
+      next: () => {},
+      error: () => {
+        // errors are already handled in the service; no-op here
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
   }
 
   filterTasks(): void {

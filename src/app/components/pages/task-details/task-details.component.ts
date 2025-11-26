@@ -12,12 +12,12 @@ import { TaskCardComponent } from '../../shared/task-card/task-card.component';
   standalone: true,
   imports: [CommonModule, RouterModule, BadgeComponent, TaskCardComponent],
   templateUrl: './task-details.component.html',
-  styleUrl: './task-details.component.css'
+  styleUrls: ['./task-details.component.css']
 })
 export class TaskDetailsComponent implements OnInit {
   task: Task | undefined;
   similarTasks: Task[] = [];
-  applied: boolean = false;
+  applied = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -27,28 +27,39 @@ export class TaskDetailsComponent implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.task = this.taskService.getTaskById(id);
-      if (this.task) {
-        this.similarTasks = this.taskService.getTasksByCategory(this.task.category)
-          .filter(t => t.id !== this.task!.id)
-          .slice(0, 3);
+    if (!id) return;
+
+    const idNum = Number(id);
+    this.taskService.getTaskById(idNum).subscribe({
+      next: (task) => {
+        this.task = task;
+        // fetch tasks and filter by category
+        this.taskService.getTasks().subscribe({
+          next: (tasks) => {
+            this.similarTasks = tasks
+              .filter(t => t.category === task.category && t.id !== task.id)
+              .slice(0, 3);
+          }
+        });
       }
-    }
+    });
   }
 
   applyToTask(): void {
-    if (this.task) {
-      const currentUser = this.userService.getCurrentUser();
-      if (currentUser) {
-        this.taskService.applyToTask(this.task.id, {
-          taskId: this.task.id,
-          userId: currentUser.id,
-          userName: currentUser.name,
-          message: 'I would like to help with this task!'
-        });
-        this.applied = true;
-      }
-    }
+    if (!this.task) return;
+
+    const currentUser = this.userService.getCurrentUser();
+    if (!currentUser) return;
+
+    const payload: any = {
+      taskId: this.task.id,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      message: 'I would like to help with this task!'
+    };
+
+    this.taskService.applyToTask(Number(this.task.id), payload).subscribe({
+      next: () => (this.applied = true)
+    });
   }
 }

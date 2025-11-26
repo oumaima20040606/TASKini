@@ -7,9 +7,9 @@
   <div class="filters-section">
     <div class="search-box">
       <span class="material-icons">search</span>
-      <input 
-        type="text" 
-        placeholder="Search tasks..." 
+      <input
+        type="text"
+        placeholder="Search tasks..."
         [(ngModel)]="searchTerm"
         (ngModelChange)="filterTasks()">
     </div>
@@ -22,10 +22,10 @@
 
       <div class="budget-filter">
         <label>Max Budget: \${{ maxBudget }}</label>
-        <input 
-          type="range" 
-          min="0" 
-          max="1000" 
+        <input
+          type="range"
+          min="0"
+          max="1000"
           step="50"
           [(ngModel)]="maxBudget"
           (ngModelChange)="filterTasks()">
@@ -40,5 +40,11 @@
   <div class="no-tasks" *ngIf="filteredTasks.length === 0">
     <span class="material-icons">inbox</span>
     <p>No tasks found matching your criteria</p>
+  </div>
+
+  <!-- Debug: raw tasks payload (remove in production) -->
+  <div class="debug-tasks" *ngIf="tasks.length > 0" style="margin-top:1rem;">
+    <h4>Debug: tasks ({{ tasks.length }})</h4>
+    <pre style="max-height:220px;overflow:auto;background:#f7f7f7;padding:0.5rem;border-radius:6px">{{ tasks | json }}</pre>
   </div>
 </div>
